@@ -47,6 +47,32 @@ app.post('/users', async (c) => {
   return c.json(user, 201);
 });
 
+app.put('/users/:id', async (c) => {
+  const id = c.req.param('id');
+  const user = users.find((u) => u.id === id);
+
+  if (!user) {
+    return c.json({ error: 'Utilisateur introuvable' }, 404);
+  }
+
+  const body = await c.req.json();
+  user.name = body.name;
+
+  return c.json(user);
+});
+
+app.delete('/users/:id', (c) => {
+  const id = c.req.param('id');
+  const index = users.findIndex((u) => u.id === id);
+
+  if (index === -1) {
+    return c.json({ error: 'Utilisateur introuvable' }, 404);
+  }
+
+  users.splice(index, 1);
+  return c.body(null, 204);
+});
+
 serve({
   fetch: app.fetch,
   hostname: host,
