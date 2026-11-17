@@ -2,11 +2,7 @@ import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
 import { zValidator } from '@hono/zod-validator';
-
-const users = [
-  { id: '64fd0138-4b59-4bed-ba01-f9e5cec16000', name: 'Alice', email: 'alice@example.com' },
-  { id: 'a7fdf5d3-a65e-4424-905d-4c7f77d535bd', name: 'Bob', email: 'bob@example.com' },
-];
+import { db } from '../db.js';
 
 const userSchema = z.object({
   name: z.string().trim().min(1).max(50),
@@ -17,15 +13,21 @@ const idSchema = z.object({
   id: z.uuid(),
 });
 
+const searchSchema = z.object({
+  search: z.string().max(100).optional(),
+});
+
 const app = new Hono();
 
-app.get('/', (c) => {
+app.get('/', zValidator('query', searchSchema), (c) => {
+  const search = c.req.valid('query').search ?? '';
+  const users = db.prepare('SELECT id, name, email FROM users WHERE name LIKE ?').all(`%${search}%`);
   return c.json(users);
 });
 
 app.get('/:id', zValidator('param', idSchema), (c) => {
   const id = c.req.valid('param').id;
-  const user = users.find((u) => u.id === id);
+  const user = db.prepare('SELECT id, name, email FROM users WHERE id = ?').get(id);
 
   if (!user) {
     throw new HTTPException(404, { message: 'Utilisateur introuvable' });
@@ -43,7 +45,7 @@ app.post('/', zValidator('json', userSchema), (c) => {
     email: data.email,
   };
 
-  users.push(user);
+  db.prepare('INSERT INTO users (id, name, email) VALUES (?, ?, ?)').run(user.id, user.name, user.email);
   return c.json(user, 201);
 });
 
