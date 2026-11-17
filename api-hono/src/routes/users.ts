@@ -3,6 +3,7 @@ import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
 import { zValidator } from '@hono/zod-validator';
 import { db } from '../db.js';
+import { requireAuth } from '../middlewares/require-auth.js';
 
 const userSchema = z.object({
   name: z.string().trim().min(1).max(50),
@@ -55,7 +56,7 @@ app.put('/:id', zValidator('param', idSchema), zValidator('json', userSchema), (
   return c.json({ id: id, name: data.name, email: data.email });
 });
 
-app.delete('/:id', zValidator('param', idSchema), (c) => {
+app.delete('/:id', requireAuth, zValidator('param', idSchema), (c) => {
   const id = c.req.valid('param').id;
   const result = db.prepare('DELETE FROM users WHERE id = ?').run(id);
 

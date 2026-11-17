@@ -4,6 +4,9 @@ import { zValidator } from '@hono/zod-validator';
 import bcrypt from 'bcryptjs';
 import { db } from '../db.js';
 import { HTTPException } from 'hono/http-exception';
+import { sign } from 'hono/jwt';
+import { JWT_SECRET } from '../config.js';
+import { requireAuth } from '../middlewares/require-auth.js';
 
 const registerSchema = z.object({
   name: z.string().trim().min(1).max(50),
@@ -55,7 +58,12 @@ app.post('/login', zValidator('json', loginSchema), async (c) => {
     throw new HTTPException(401, { message: 'Adresse e-mail ou mot de passe incorrect' });
   }
 
-  return c.json({ id: user.id, name: user.name, email: user.email });
+  const token = await sign({
+    sub: user.id,
+    exp: Math.floor(Date.now() / 1000) + 60 * 60,
+  }, JWT_SECRET, 'HS256');
+
+  return c.json({ token: token });
 });
 
 app.put('/password', zValidator('json', passwordSchema), async (c) => {
@@ -71,6 +79,17 @@ app.put('/password', zValidator('json', passwordSchema), async (c) => {
   db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(passwordHash, user.id);
 
   return c.body(null, 204);
+});
+
+app.get('/me', requireAuth, (c) => {
+  const payload = c.get('jwtPayload') as { sub: string };
+  const user = db.prepare('SELECT id, name, email FROM users WHERE id = ?').get(payload.sub);
+
+  if (!user) {
+    throw new HTTPException(404, { message: 'Utilisateur introuvable' });
+  }
+
+  return c.json(user);
 });
 
 export default app;
