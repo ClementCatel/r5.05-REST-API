@@ -58,6 +58,13 @@ app.put('/:id', requireAuth, zValidator('param', idSchema), zValidator('json', u
 
 app.delete('/:id', requireAuth, zValidator('param', idSchema), (c) => {
   const id = c.req.valid('param').id;
+
+  const payload = c.get('jwtPayload') as { sub: string; role: string };
+
+  if (payload.sub !== id && payload.role !== 'admin') {
+    throw new HTTPException(403, { message: 'Action non autorisée' });
+  }
+
   const result = db.prepare('DELETE FROM users WHERE id = ?').run(id);
 
   if (result.changes === 0) {

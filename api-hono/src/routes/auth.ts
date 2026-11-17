@@ -51,7 +51,7 @@ app.post('/register', zValidator('json', registerSchema), async (c) => {
 app.post('/login', zValidator('json', loginSchema), async (c) => {
   const data = c.req.valid('json');
 
-  const user = db.prepare('SELECT id, name, email, password_hash FROM users WHERE email = ?').get(data.email) as { id: string; name: string; email: string; password_hash: string } | undefined;
+  const user = db.prepare('SELECT id, name, email, password_hash, role FROM users WHERE email = ?').get(data.email) as { id: string; name: string; email: string; password_hash: string; role: string } | undefined;
 
   if (!user || !(await bcrypt.compare(data.password, user.password_hash))) {
     throw new HTTPException(401, { message: 'Adresse e-mail ou mot de passe incorrect' });
@@ -59,6 +59,7 @@ app.post('/login', zValidator('json', loginSchema), async (c) => {
 
   const token = await sign({
     sub: user.id,
+    role: user.role,
     exp: Math.floor(Date.now() / 1000) + 60 * 60,
   }, JWT_SECRET, 'HS256');
 
