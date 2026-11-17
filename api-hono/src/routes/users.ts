@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { zValidator } from '@hono/zod-validator';
 import { db } from '../db.js';
 import { requireAuth } from '../middlewares/require-auth.js';
+import { requireAdmin } from '../middlewares/require-admin.js';
 
 const userSchema = z.object({
   name: z.string().trim().min(1).max(50),
@@ -20,7 +21,7 @@ const searchSchema = z.object({
 
 const app = new Hono();
 
-app.get('/', requireAuth, zValidator('query', searchSchema), (c) => {
+app.get('/', requireAuth, requireAdmin, zValidator('query', searchSchema), (c) => {
   const search = c.req.valid('query').search ?? '';
   const users = db.prepare('SELECT id, name, email FROM users WHERE name LIKE ? OR email LIKE ?').all(`%${search}%`, `%${search}%`);
   return c.json(users);
@@ -40,6 +41,12 @@ app.get('/:id', requireAuth, zValidator('param', idSchema), (c) => {
 app.put('/:id', requireAuth, zValidator('param', idSchema), zValidator('json', userSchema), (c) => {
   const id = c.req.valid('param').id;
   const data = c.req.valid('json');
+
+  const payload = c.get('jwtPayload') as { sub: string };
+
+  if (payload.sub !== id) {
+    throw new HTTPException(403, { message: 'Action non autorisée' });
+  }
 
   const existingUser = db.prepare('SELECT id FROM users WHERE email = ? AND id != ?').get(data.email, id);
 
