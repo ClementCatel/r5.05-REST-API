@@ -16,6 +16,12 @@ const loginSchema = z.object({
   password: z.string(),
 });
 
+const passwordSchema = z.object({
+  email: z.email(),
+  currentPassword: z.string(),
+  newPassword: z.string().min(8).max(72),
+});
+
 const app = new Hono();
 
 app.post('/register', zValidator('json', registerSchema), async (c) => {
@@ -50,6 +56,21 @@ app.post('/login', zValidator('json', loginSchema), async (c) => {
   }
 
   return c.json({ id: user.id, name: user.name, email: user.email });
+});
+
+app.put('/password', zValidator('json', passwordSchema), async (c) => {
+  const data = c.req.valid('json');
+
+  const user = db.prepare('SELECT id, password_hash FROM users WHERE email = ?').get(data.email) as { id: string; password_hash: string } | undefined;
+
+  if (!user || !(await bcrypt.compare(data.currentPassword, user.password_hash))) {
+    throw new HTTPException(401, { message: 'Adresse e-mail ou mot de passe incorrect' });
+  }
+
+  const passwordHash = await bcrypt.hash(data.newPassword, 10);
+  db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(passwordHash, user.id);
+
+  return c.body(null, 204);
 });
 
 export default app;

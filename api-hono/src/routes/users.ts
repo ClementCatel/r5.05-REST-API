@@ -40,6 +40,12 @@ app.put('/:id', zValidator('param', idSchema), zValidator('json', userSchema), (
   const id = c.req.valid('param').id;
   const data = c.req.valid('json');
 
+  const existingUser = db.prepare('SELECT id FROM users WHERE email = ? AND id != ?').get(data.email, id);
+
+  if (existingUser) {
+    throw new HTTPException(409, { message: 'Adresse e-mail déjà utilisée' });
+  }
+
   const result = db.prepare('UPDATE users SET name = ?, email = ? WHERE id = ?').run(data.name, data.email, id);
 
   if (result.changes === 0) {
