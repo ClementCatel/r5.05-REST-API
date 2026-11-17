@@ -48,9 +48,14 @@ app.put('/:id', async (c) => {
     throw new HTTPException(404, { message: 'Utilisateur introuvable' });
   }
 
-  const body = await c.req.json();
-  user.name = body.name;
+  let body;
+  try {
+    body = await c.req.json();
+  } catch {
+    throw new HTTPException(400, { message: 'Le corps de la requête doit être un JSON valide' });
+  }
 
+  user.name = body.name;
   return c.json(user);
 });
 
