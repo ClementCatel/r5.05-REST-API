@@ -20,13 +20,13 @@ const searchSchema = z.object({
 
 const app = new Hono();
 
-app.get('/', zValidator('query', searchSchema), (c) => {
+app.get('/', requireAuth, zValidator('query', searchSchema), (c) => {
   const search = c.req.valid('query').search ?? '';
   const users = db.prepare('SELECT id, name, email FROM users WHERE name LIKE ? OR email LIKE ?').all(`%${search}%`, `%${search}%`);
   return c.json(users);
 });
 
-app.get('/:id', zValidator('param', idSchema), (c) => {
+app.get('/:id', requireAuth, zValidator('param', idSchema), (c) => {
   const id = c.req.valid('param').id;
   const user = db.prepare('SELECT id, name, email FROM users WHERE id = ?').get(id);
 
@@ -37,7 +37,7 @@ app.get('/:id', zValidator('param', idSchema), (c) => {
   return c.json(user);
 });
 
-app.put('/:id', zValidator('param', idSchema), zValidator('json', userSchema), (c) => {
+app.put('/:id', requireAuth, zValidator('param', idSchema), zValidator('json', userSchema), (c) => {
   const id = c.req.valid('param').id;
   const data = c.req.valid('json');
 
