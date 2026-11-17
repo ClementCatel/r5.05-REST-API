@@ -3,6 +3,7 @@ import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { logger } from 'hono/logger';
 import usersRouter from './routes/users.js';
+import authRouter from './routes/auth.js';
 import helloRouter from './routes/hello.js';
 import { requestId } from './middlewares/request-id.js';
 import { errorLogger } from './middlewares/error-logger.js';
@@ -21,6 +22,7 @@ app.get('/', (c) => {
 });
 
 app.route('/users', usersRouter);
+app.route('/auth', authRouter);
 app.route('/hello', helloRouter);
 
 app.notFound((c) => {

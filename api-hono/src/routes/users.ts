@@ -36,19 +36,6 @@ app.get('/:id', zValidator('param', idSchema), (c) => {
   return c.json(user);
 });
 
-app.post('/', zValidator('json', userSchema), (c) => {
-  const data = c.req.valid('json');
-
-  const user = {
-    id: crypto.randomUUID(),
-    name: data.name,
-    email: data.email,
-  };
-
-  db.prepare('INSERT INTO users (id, name, email) VALUES (?, ?, ?)').run(user.id, user.name, user.email);
-  return c.json(user, 201);
-});
-
 app.put('/:id', zValidator('param', idSchema), zValidator('json', userSchema), (c) => {
   const id = c.req.valid('param').id;
   const data = c.req.valid('json');
