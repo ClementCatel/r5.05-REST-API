@@ -21,7 +21,7 @@ const app = new Hono();
 
 app.get('/', zValidator('query', searchSchema), (c) => {
   const search = c.req.valid('query').search ?? '';
-  const users = db.prepare('SELECT id, name, email FROM users WHERE name LIKE ?').all(`%${search}%`);
+  const users = db.prepare('SELECT id, name, email FROM users WHERE name LIKE ? OR email LIKE ?').all(`%${search}%`, `%${search}%`);
   return c.json(users);
 });
 
@@ -52,26 +52,24 @@ app.post('/', zValidator('json', userSchema), (c) => {
 app.put('/:id', zValidator('param', idSchema), zValidator('json', userSchema), (c) => {
   const id = c.req.valid('param').id;
   const data = c.req.valid('json');
-  const user = users.find((u) => u.id === id);
 
-  if (!user) {
+  const result = db.prepare('UPDATE users SET name = ?, email = ? WHERE id = ?').run(data.name, data.email, id);
+
+  if (result.changes === 0) {
     throw new HTTPException(404, { message: 'Utilisateur introuvable' });
   }
 
-  user.name = data.name;
-  user.email = data.email;
-  return c.json(user);
+  return c.json({ id: id, name: data.name, email: data.email });
 });
 
 app.delete('/:id', zValidator('param', idSchema), (c) => {
   const id = c.req.valid('param').id;
-  const index = users.findIndex((u) => u.id === id);
+  const result = db.prepare('DELETE FROM users WHERE id = ?').run(id);
 
-  if (index === -1) {
+  if (result.changes === 0) {
     throw new HTTPException(404, { message: 'Utilisateur introuvable' });
   }
 
-  users.splice(index, 1);
   return c.body(null, 204);
 });
 
