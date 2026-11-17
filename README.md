@@ -1,6 +1,6 @@
 # R5.05 – Concevoir et sécuriser une API REST
 
-Code du cours R5.05 du BUT Informatique (3e année), consacré à la conception et à la sécurisation d’une API REST avec [Hono](https://hono.dev).
+Code du cours R5.05 consacré à la conception et à la sécurisation d’une API REST avec [Hono](https://hono.dev).
 
 ## Organisation du dépôt
 
@@ -19,12 +19,6 @@ Chaque partie du cours dispose de deux branches.
 | 6. Authentifier les utilisateurs | `partie-6` | `partie-6-solution` |
 | 7. Protéger les routes avec un token JWT | `partie-7` | `partie-7-solution` |
 | 8. Gérer les autorisations | `partie-8` | `partie-8-solution` |
-
-Chaque branche part de la solution de la partie précédente. Pour afficher uniquement la solution d’un exercice, comparez les deux branches d’une même partie :
-
-```bash
-git diff partie-3 partie-3-solution
-```
 
 Le code est réparti dans deux dossiers.
 
